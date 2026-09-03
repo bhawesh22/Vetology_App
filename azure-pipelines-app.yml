@@ -33,6 +33,8 @@ stages:
       - job: BuildJob
         displayName: "task build"
         steps:
+          - checkout: self
+            displayName: "checkout source code"
           - bash: |
               mkdir -p "$HOME/bin"
               sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b "$HOME/bin"
