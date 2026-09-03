@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>webtext-app</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f7f8fa;
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 48px 64px;
+      text-align: center;
+    }
+
+    .label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #57606a;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1f2328;
+    }
+
+    .footer {
+      margin-top: 32px;
+      font-size: 0.75rem;
+      color: #57606a;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="label">webtext-app</p>
+    <h1>${WEBTEXT}</h1>
+  </div>
+  <p class="footer">Powered by nginx &bull; WEBTEXT env var</p>
+</body>
+</html>

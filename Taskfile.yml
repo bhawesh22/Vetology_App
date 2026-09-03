@@ -1,0 +1,89 @@
+version: '3'
+
+vars:
+  IMAGE_NAME: webtext-app
+  CONTAINER_NAME: webtext-app
+  HOST_PORT: 8081
+  CONTAINER_PORT: 80
+  DEPLOY_WEBTEXT: "Development deploy"
+
+tasks:
+
+  build:
+    desc: "Build the webtext-app Docker image"
+    cmds:
+      - docker build -t {{.IMAGE_NAME}} .
+    sources:
+      - Dockerfile
+      - index.html
+
+  lint:
+    desc: "Run hadolint linter against Dockerfile"
+    cmds:
+      - docker run --rm -i hadolint/hadolint < Dockerfile
+
+  deploy:
+    desc: "Run webtext-app container locally on port 8081 with WEBTEXT='Development deploy'"
+    deps: [build]
+    cmds:
+      - |
+        if [ "$(docker ps -aq -f name=^{{.CONTAINER_NAME}}$)" ]; then
+          docker stop {{.CONTAINER_NAME}} 2>/dev/null || true
+          docker rm {{.CONTAINER_NAME}} 2>/dev/null || true
+        fi
+      - >
+        docker run -d
+        --name {{.CONTAINER_NAME}}
+        -p {{.HOST_PORT}}:{{.CONTAINER_PORT}}
+        -e WEBTEXT="{{.DEPLOY_WEBTEXT}}"
+        {{.IMAGE_NAME}}
+      - echo "webtext-app is running at http://localhost:{{.HOST_PORT}}"
+
+  test:
+    desc: "Verify that curl localhost:8081 HTML contains 'Development deploy'"
+    cmds:
+      - |
+        echo "Waiting for service to be ready..."
+        sleep 2
+      - |
+        RESPONSE=$(curl -s --retry 5 --retry-delay 1 --retry-connrefused http://localhost:{{.HOST_PORT}})
+        EXPECTED="{{.DEPLOY_WEBTEXT}}"
+        if echo "$RESPONSE" | grep -q "$EXPECTED"; then
+          echo "TEST PASSED: Found '$EXPECTED' in response"
+        else
+          echo "TEST FAILED: '$EXPECTED' not found in response"
+          echo "Got: $RESPONSE"
+          exit 1
+        fi
+
+  clean:
+    desc: "Stop and remove the webtext-app container"
+    cmds:
+      - docker stop {{.CONTAINER_NAME}} 2>/dev/null || true
+      - docker rm {{.CONTAINER_NAME}} 2>/dev/null || true
+      - echo "Container stopped and removed."
+
+  cicd:
+    desc: "Run full CI/CD pipeline: lint -> build -> deploy -> test"
+    cmds:
+      - task: lint
+      - task: build
+      - task: deploy
+      - task: test
+
+  deploywithdoppler:
+    desc: "Run webtext-app with WEBTEXT value fetched from Doppler (requires DOPPLER_TOKEN env var)"
+    cmds:
+      - |
+        if [ "$(docker ps -aq -f name=^{{.CONTAINER_NAME}}$)" ]; then
+          docker stop {{.CONTAINER_NAME}} 2>/dev/null || true
+          docker rm {{.CONTAINER_NAME}} 2>/dev/null || true
+        fi
+      - |
+        DOPPLER_WEBTEXT=$(doppler secrets get WEBTEXT --plain --token "$DOPPLER_TOKEN")
+        docker run -d \
+          --name {{.CONTAINER_NAME}} \
+          -p {{.HOST_PORT}}:{{.CONTAINER_PORT}} \
+          -e WEBTEXT="$DOPPLER_WEBTEXT" \
+          {{.IMAGE_NAME}}
+      - echo "webtext-app (Doppler) is running at http://localhost:{{.HOST_PORT}}"
